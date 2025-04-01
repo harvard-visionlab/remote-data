@@ -10,6 +10,7 @@ from pdb import set_trace
 
 from visionlab.auth import (
     get_aws_credentials_with_provider_hint,
+    normalize_uri,
     parse_uri,
     S3_PROVIDER_ENDPOINT_URLS
 )
@@ -80,11 +81,16 @@ def get_cache_dir(source=None, cache_root=None, profile=None):
         # looks like a Directory on a mounted volume
         key = os.path.abspath(key).lstrip("/")
         local_dir = os.path.join(cache_root, 'mnt', netloc, key)
-    elif scheme in ['https', 'http'] and not parsed.netloc.startswith("s3"):
-        # ordinary web url
-        local_dir = os.path.join(cache_root, scheme, netloc, key)        
-    elif scheme == S3_PROVIDER_ENDPOINT_URLS:
+    elif scheme in ['https', 'http']:
+        # treat as ordinary web url
+        try:
+            metadata = get_file_metadata(source)
+            local_dir = os.path.join(cache_root, 'hashid', metadata['hash'])
+        except:
+            local_dir = os.path.join(cache_root, scheme, netloc, key)    
+    elif scheme in S3_PROVIDER_ENDPOINT_URLS or parsed.netloc.startswith("s3"):
         provider = scheme
+        s3_uri = normalize_uri(source)        
         endpoint = S3_PROVIDER_ENDPOINT_URLS[provider]
         endpoint = urlparse(endpoint).netloc
         local_dir = os.path.join(cache_root, "s3", provider, netloc, key)
