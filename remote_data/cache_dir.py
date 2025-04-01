@@ -45,16 +45,22 @@ def check_platform():
     else:
         return Platform.DEVBOX
     
-def get_cache_root():
+def get_cache_root(*args):
     platform = check_platform()
     if platform == Platform.LIGHTNING_STUDIO:
-        cache_root = os.getenv('STUDIO_CACHE', _DEFAULT_STUDIO_CACHEDIR)
+        cache_root = os.getenv('STUDIO_CACHE', _DEFAULT_STUDIO_CACHEDIR)        
         Path(cache_root).mkdir(parents=True, exist_ok=True)
+        for arg in args:
+            cache_root = os.path.join(cache_root, arg)
         return cache_root
     else:
         for folder in _DEFAULT_DIRS.values():
             if os.path.exists(folder):
-                return folder
+                cache_root = folder
+                for arg in args:
+                    cache_root = os.path.join(cache_root, arg)
+                Path(cache_root).mkdir(parents=True, exist_ok=True)
+                return cache_root
     warnings.warn("NO cache directory found!")
     return None
 

@@ -11,24 +11,24 @@ from .s5cmd_options import get_s5cmd_options_for_uri
 
 logger = logging.getLogger(__name__) # Use module name for clarity
 
-__all__ = ['s5cmd_download_file', 's5cmd_sync']
+__all__ = ['s5cmd_sync']
 
-def s5cmd_download_file(remote_filepath: str, local_filepath: str,
-                        profile: str=None, endpoint_url: str=None, region: str=None, 
-                        dry_run: bool=False, no_signed_option=None, endpoint_option=None):
+# def s5cmd_sync_file(remote_filepath: str, local_filepath: str,
+#                         profile: str=None, endpoint_url: str=None, region: str=None, 
+#                         dry_run: bool=False, no_signed_option=None, endpoint_option=None):
 
-    # get s5cmd_options needed for the command line call:
-    s5cmd_options = get_s5cmd_options_for_uri(remote_filepath,
-                                              profile=profile,
-                                              endpoint_url=endpoint_url,
-                                              region=region,
-                                              no_signed_option=no_signed_option,
-                                              endpoint_option=endpoint_option)
+#     # get s5cmd_options needed for the command line call:
+#     s5cmd_options = get_s5cmd_options_for_uri(remote_filepath,
+#                                               profile=profile,
+#                                               endpoint_url=endpoint_url,
+#                                               region=region,
+#                                               no_signed_option=no_signed_option,
+#                                               endpoint_option=endpoint_option)
     
-    s5cmd_options['dry_run_option'] = '--dry-run' if dry_run else None
-    remote_filepath = normalize_uri(remote_filepath)
+#     s5cmd_options['dry_run_option'] = '--dry-run' if dry_run else None
+#     remote_filepath = normalize_uri(remote_filepath)
     
-    return s5cmd_sync(remote_filepath, local_filepath, s5cmd_options)
+#     return s5cmd_sync(remote_filepath, local_filepath, s5cmd_options)
         
 def s5cmd_sync(src_filepath: str, dst_filepath: str, s5cmd_options=None) -> None:
         """
