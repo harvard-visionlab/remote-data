@@ -17,7 +17,7 @@ from visionlab.auth import (
 from .metadata import get_file_metadata
 
 
-_DEFAULT_STUDIO_CACHEDIR = _get_torch_home().replace("/torch", "/datasets")
+_DEFAULT_STUDIO_CACHEDIR = _get_torch_home().replace("/torch", "/visionlab")
 _DEFAULT_DIRS=OrderedDict([
     ('NETSCRATCH', "/n/netscratch/alvarez_lab/Lab/datasets/cache"),
     ('TIER1', "/n/alvarez_lab_tier1/Lab/datasets/cache"),

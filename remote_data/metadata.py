@@ -3,6 +3,7 @@ import re
 import hashlib
 import boto3
 import requests
+from pathlib import Path
 from urllib.parse import urlparse
 
 from botocore.exceptions import ClientError
@@ -21,24 +22,46 @@ from visionlab.auth import (
 
 __all__ = ['get_file_metadata']
 
-def get_file_metadata(source, read_limit=8192, hash_length=32, s3_config=None):
+# matches bfd8deac from resnet18-bfd8deac.pth.tar
+HASH_REGEX = re.compile(r'-([a-f0-9]*)\.(?:[^.]+(?:\.[^.]+)*)')
+
+def split_name(path: Path):
+    """Split a path into the stem and the complete extension (all suffixes)."""
+    path = Path(path)
+    suffixes = path.suffixes
+    if suffixes:
+        ext = "".join(suffixes)
+        stem = path.name[:-len(ext)]
+    else:
+        ext = ""
+        stem = path.name
+    return stem, ext
+    
+def get_file_metadata(source, read_limit=8192*8, hash_length=32, s3_config=None):
     """
     Retrieve file metadata, including size and unique identifier (content hash) based on the source.
     
     Parameters:
     source (str): The source URI, which can be an S3 URI, HTTP/HTTPS URL, or local file path.
-    read_limit (int): The number of bytes to read for generating the hash.
+    read_limit (int): The number of bytes to read for generating the hash (64KB default)
     profile_name (str): AWS profile name to use for private S3 access if needed.
     region (str): AWS region for the S3 bucket.
     
     Returns:
     dict: A dictionary containing 'size' (in bytes) and 'hash' (SHA-256 hash of content sample).
     """    
+    if s3_config is None:
+        s3_config = {}
+    profile = s3_config.get('profile')
+    endpoint_url = s3_config.get('endpoint_url')
+    region = s3_config.get('region')
+    
     parsed = urlparse(source)
     hasher = hashlib.sha256()
     size = None
 
-    if os.path.isfile(source):
+    if os.path.isfile(os.path.expanduser(source)):
+        source = os.path.expanduser(source)
         # For local files
         size = os.path.getsize(source)
         
@@ -81,7 +104,7 @@ def get_file_metadata(source, read_limit=8192, hash_length=32, s3_config=None):
 
         if not is_public:   
             creds = get_aws_credentials_with_provider_hint(provider,
-                                                           profile=profile_name,
+                                                           profile=profile,
                                                            endpoint_url=endpoint_url,
                                                            region=region)
             if endpoint_url is None:
@@ -120,12 +143,31 @@ def get_file_metadata(source, read_limit=8192, hash_length=32, s3_config=None):
 
     unique_id = hasher.hexdigest()
     final_hash = unique_id[:hash_length] if hash_length else unique_id
-    
+    if size > 0:
+        hash_id = final_hash
+        signature = f"{hash_id}-{size}"
+    else:
+        hash_id = None
+        signature = f"{parsed.netloc}{parsed.path}"
+
+    # get the filename
+    filename = Path(source).name
+    stem, ext = split_name(source)
+
+    # check filename for a hash_prefix
+    matches = HASH_REGEX.findall(filename) # matches is Optional[Match[str]]
+    sha256_prefix = matches[-1] if matches else None
+
     return {
         'scheme': parsed.scheme, 
         'netloc': parsed.netloc, 
         'path': parsed.path, 
         'size': size, 
-        'hash': final_hash if size > 0 else None, 
-        'read_limit': read_limit
+        'partial_hash': hash_id, 
+        'sha256_prefix': sha256_prefix,
+        'read_limit': read_limit,
+        'signature': signature,
+        'filename': filename,
+        'stem': stem,
+        'ext': ext
     }

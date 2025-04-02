@@ -41,7 +41,7 @@ __all__ = ['s5cmd_download_file', 's5cmd_cp']
 #     return s5cmd_cp(remote_filepath, local_filepath, s5cmd_options)
 
 def s5cmd_download_file(remote_filepath: str, local_filepath: str,
-                        profile: Optional[str] = None, endpoint_url: Optional[str] = None, region: Optional[str] = None,
+                        s3_config=None,
                         dry_run: bool = False, show_progress: bool = True,
                         no_signed_option: Optional[bool] = None, # Changed to Optional[bool] for clarity
                         endpoint_option: Optional[str] = None, # Changed to Optional[str]
@@ -51,16 +51,23 @@ def s5cmd_download_file(remote_filepath: str, local_filepath: str,
 
     Args:
         remote_filepath: The source URI (e.g., s3://bucket/key, wasabi://bucket/key).
-        local_filepath: The destination local file path.
-        profile: AWS profile name (or equivalent).
-        endpoint_url: Custom S3 endpoint URL.
-        region: AWS region (or equivalent).
+        local_filepath: The destination local file path.        
+        s3_config:
+            profile: AWS profile name (or equivalent).
+            endpoint_url: Custom S3 endpoint URL.
+            region: AWS region (or equivalent).
         dry_run: If True, simulate the command without actual transfer.
         show_progress: If True, display s5cmd progress.
         no_signed_option: If True, use --no-sign-request (for public buckets).
         endpoint_option: Explicit endpoint option string (overrides endpoint_url).
         lock_timeout: Maximum time in seconds to wait for the lock.
     """
+    if s3_config is None:
+        s3_config = {}
+    profile = s3_config.get('profile')
+    endpoint_url = s3_config.get('endpoint_url')
+    region = s3_config.get('region')
+    
     lock_filepath = local_filepath + ".lock"
     # Ensure the directory for the lock file exists
     os.makedirs(os.path.dirname(lock_filepath), exist_ok=True)

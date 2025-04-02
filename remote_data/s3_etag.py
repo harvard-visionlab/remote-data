@@ -59,4 +59,4 @@ def calculate_s3_etag(file_path, chunk_size=8*1024*1024):
     # Calculate multipart ETag
     digests = b''.join(md5s)
     etag = hashlib.md5(digests).hexdigest()
-    return f'"{etag}-{len(md5s)}"'
+    return f'{etag}-{len(md5s)}'
