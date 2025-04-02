@@ -15,13 +15,13 @@ from visionlab.auth import (
     parse_uri,
     normalize_uri, 
     S3_PROVIDER_ENDPOINT_URLS, 
-    check_public_s3_object
+    check_public_s3_object,
+    sign_url_if_needed
 )
 
 __all__ = ['get_file_metadata']
 
-def get_file_metadata(source, read_limit=8192, hash_length=32, profile_name=None,
-                      endpoint_url=None, region=None):
+def get_file_metadata(source, read_limit=8192, hash_length=32, s3_config=None):
     """
     Retrieve file metadata, including size and unique identifier (content hash) based on the source.
     
@@ -48,7 +48,9 @@ def get_file_metadata(source, read_limit=8192, hash_length=32, profile_name=None
             
     elif parsed.scheme in ["http", "https"]:
         # For HTTP/HTTPS URLs
+        source = sign_url_if_needed(source, s3_config=s3_config)
         head_response = requests.head(source)
+        
         size = head_response.headers.get('Content-Length')
 
         # If Content-Length is not provided, perform a full GET request to get the file size

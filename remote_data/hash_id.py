@@ -1,9 +1,13 @@
+import re
 import hashlib
 import fire
 from pathlib import Path
 from pdb import set_trace
 
 __all__ = ['compute_sha256', 'split_name', 'rename_file_with_hash']
+
+# matches bfd8deac from resnet18-bfd8deac.pth
+HASH_REGEX = re.compile(r'-([a-f0-9]*)\.')
 
 def compute_sha256(file_path):
     """
