@@ -1,4 +1,4 @@
-from .download import *
+from .downloaders import *
 from .s5cmd_python import *
 from .cache_dir import *
 from .decompress import *
